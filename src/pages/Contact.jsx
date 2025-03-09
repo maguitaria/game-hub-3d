@@ -5,7 +5,7 @@ import '../styles/App.css';
 const Contact = () => {
     return (
         <div>
-            <Navbar />
+
             <div className="content-container">
                 <h1>Contact Us</h1>
                 <p>Have feedback or questions? Reach out to us!</p>
