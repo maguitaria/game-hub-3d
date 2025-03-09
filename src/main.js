@@ -51,7 +51,7 @@ createTree(3, 3);
 
 // Load a 3D Rock Model (optional, can replace with other nature objects)
 const loader = new GLTFLoader();
-loader.load('public/rock_model.glb', function (gltf) {
+loader.load('/rock_model.glb', function (gltf) {
     const rock = gltf.scene;
     rock.position.set(0, 0, 0);
     scene.add(rock);
