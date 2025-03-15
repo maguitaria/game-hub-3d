@@ -22,7 +22,7 @@ const MeditationScene = () => {
         mountRef.current.appendChild(renderer.domElement);
 
         // Add Scene Elements (Trees, Sun, Ground)
-        SceneElements(scene);
+        // SceneElements(scene);
 
         // Controls
         const controls = Controls(camera, renderer);
