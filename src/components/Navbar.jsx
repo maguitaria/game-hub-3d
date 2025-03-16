@@ -17,7 +17,7 @@ const Navbar = () => {
             <Link to="/about" className="hover:text-gray-200 transition">About</Link>
             <Link to="/contact" className="hover:text-gray-200 transition">Contact</Link>
 
-            <Link to="/grass-page" className="hover:text-gray-200 transition">Grass</Link>
+            <Link to="/combini-page" className="hover:text-gray-200 transition">Combini game</Link>
             <Link to="/model-scene" className="hover:text-gray-200 transition">3D Model</Link>
             <Link to="/tree" className="hover:text-gray-200 transition">Tree</Link>
         </div>

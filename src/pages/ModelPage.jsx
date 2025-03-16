@@ -5,8 +5,7 @@ import ModelScene from '../components/ModelScene';
 
 const ModelPage = () => {
    <>
-   <ModelScene />
-   <img className="controlKeys" src="/controls.png" alt="control keys" />
+  <ModelScene />
    </>
 };
 
