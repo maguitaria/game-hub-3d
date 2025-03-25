@@ -9,8 +9,7 @@ import TreePage from './pages/TreePage'
 import Navbar from './components/Navbar';
 import './styles/App.css';
 import ModelScene from './components/ModelScene';
-import CombiniScene from './components/CombiniScene';
-import UkraineWalk from './components/CombiniScene';
+import Game from './components/CombiniScene';
 const App = () => {
     return (
         <>
@@ -19,7 +18,7 @@ const App = () => {
                 <Route path="/" element={<MeditationScene />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/combini-page" element={< UkraineWalk/>} />
+                <Route path="/combini-page" element={< Game/>} />
                 <Route path="/model-scene" element={< ModelScene/>} />
                 <Route path="/tree" element={< TreePage/>} />
             </Routes>
