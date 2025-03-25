@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Gltf, KeyboardControls } from "@react-three/drei";
-import { Physics } from "@react-three/rapier";
+import { Physics, RigidBody } from "@react-three/rapier";
 import { useState, useEffect, useRef } from "react";
 import { Suspense } from "react";
 import Controller from "ecctrl";
@@ -30,6 +30,12 @@ const Game = () => {
     const mapContainerRef = useRef(null); // ✅ Ensures `#map` is available
     const pointMarkers = useRef([]);
     const [points, setPoints] = useState([]);
+    const [lastPlayerPosition, setLastPlayerPosition] = useState({ ...playerRef.current });
+    const [currentCity, setCurrentCity] = useState(null);
+const [cityQuest, setCityQuest] = useState(null);
+const [starsCollected, setStarsCollected] = useState(0);
+const [regenCooldown, setRegenCooldown] = useState(false); // Cooldown state
+
     const keyboardMap = [
         { name: "forward", keys: ["ArrowUp", "KeyW"] },
         { name: "backward", keys: ["ArrowDown", "KeyS"] },
@@ -59,30 +65,41 @@ const Game = () => {
                     setMap(newMap);
                     generatePoints(newMap);
                     fetchWeather(newLocation.lat(), newLocation.lng()); // ✅ Fetch live weather
+                    checkCityQuest()
                 }
             });
         });
     }, [gameStarted, startLocation]);
     const generatePoints = (mapInstance) => {
+      if (!mapInstance) return; // Ensure the map is ready
+  
+      // Generate 5 stars within a reasonable distance from the player
       const newPoints = Array.from({ length: 5 }, () => ({
-          lat: playerRef.current.lat + (Math.random() - 0.5) * 0.01,
-          lng: playerRef.current.lng + (Math.random() - 0.5) * 0.01,
+          lat: playerRef.current.lat + (Math.random() - 0.002) * 0.004, // Smaller range for visibility
+          lng: playerRef.current.lng + (Math.random() - 0.002) * 0.004,
       }));
-
+  
       setPoints(newPoints);
-
-      // Add markers (icons) to map
-      pointMarkers.current = newPoints.map((point) =>
-          new google.maps.Marker({
+  
+      // Remove previous markers
+      pointMarkers.current.forEach(marker => marker.setMap(null));
+      pointMarkers.current = [];
+  
+      // Add new markers (icons) to map
+      newPoints.forEach((point) => {
+          const marker = new google.maps.Marker({
               position: point,
               map: mapInstance,
               icon: {
-                  url: POINT_ICON_URL,
-                  scaledSize: new google.maps.Size(100, 100),
+                  url: "https://upload.wikimedia.org/wikipedia/commons/9/99/Star_icon_stylized.svg", // ✅ High-resolution star
+                  scaledSize: new google.maps.Size(80, 80), // ✅ Ensures stars are visible
+                  anchor: new google.maps.Point(25, 25), // ✅ Center the icon
               },
-          })
-      );
+          });
+          pointMarkers.current.push(marker);
+      });
   };
+  
      // ✅ Fetch real-time weather from Open-Meteo API
      const fetchWeather = async (lat, lon) => {
       try {
@@ -97,19 +114,60 @@ const Game = () => {
       }
   };
 
-    const movePlayer = (direction) => {
-        let delta = 0.0005;
-        if (direction === "forward") playerRef.current.lat += delta;
-        if (direction === "backward") playerRef.current.lat -= delta;
-        if (direction === "leftward") playerRef.current.lng -= delta;
-        if (direction === "rightward") playerRef.current.lng += delta;
-
-        if (map) {
-            map.setCenter(playerRef.current);
+  const getCityName = async (lat, lng) => {
+    try {
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`);
+        const data = await response.json();
+        if (data.results.length > 0) {
+            const city = data.results.find(result => result.types.includes("locality"));
+            return city ? city.formatted_address : "Unknown City";
         }
-        checkCollision();
-    };
+    } catch (error) {
+        console.error("Error fetching city:", error);
+        return "Unknown City";
+    }
+};
 
+const checkCityQuest = async () => {
+    const cityName = await getCityName(playerRef.current.lat, playerRef.current.lng);
+    
+    if (cityName !== currentCity) {
+        setCurrentCity(cityName);
+        setCityQuest({
+            name: `Explore ${cityName}!`,
+            goal: 5,
+            progress: 0,
+        });
+        setStarsCollected(0);
+        setNotification(`📍 Welcome to ${cityName}! New Quest: Collect 5 stars!`);
+    }
+};
+  const movePlayer = (direction) => {
+    let delta = 0.0005;
+    if (direction === "forward") playerRef.current.lat += delta;
+    if (direction === "backward") playerRef.current.lat -= delta;
+    if (direction === "leftward") playerRef.current.lng -= delta;
+    if (direction === "rightward") playerRef.current.lng += delta;
+
+    if (map) {
+        map.setCenter(playerRef.current);
+    }
+    checkCollision();
+
+    // ✅ Only regenerate stars if player moves more than 0.01 in lat/lng (large city block)
+    const distance = Math.sqrt(
+        (playerRef.current.lat - lastPlayerPosition.lat) ** 2 +
+        (playerRef.current.lng - lastPlayerPosition.lng) ** 2
+    );
+
+    if (distance > 0.01 && !regenCooldown) { // Prevents frequent regen
+        setRegenCooldown(true);
+        setTimeout(() => setRegenCooldown(false), 5000); // Cooldown: 5 seconds before regen again
+
+        setLastPlayerPosition({ ...playerRef.current });
+        generatePoints(map);
+    }
+};
     const handleJump = () => {
         if (!jumpRef.current) {
             jumpRef.current = true;
@@ -124,112 +182,141 @@ const Game = () => {
           prevPoints.filter((point, index) => {
               const distance = Math.sqrt(
                   (point.lat - playerRef.current.lat) ** 2 +
-                      (point.lng - playerRef.current.lng) ** 2
+                  (point.lng - playerRef.current.lng) ** 2
               );
+  
               if (distance < 0.0005) {
-                setScore((prevScore) => prevScore + 1);
-                setNotification("🎉 Star Collected!");
-                setTimeout(() => setNotification(""), 1500);
-
+                  setScore((prevScore) => prevScore + 1);
+                  setStarsCollected((prev) => prev + 1);
+                  setNotification("🎉 Star Collected!");
+  
+                  // ✅ Update Quest Progress
+                  if (cityQuest && starsCollected + 1 >= cityQuest.goal) {
+                      setNotification(`✅ Quest Completed: ${cityQuest.name}!`);
+                      setCityQuest(null); // Remove the quest
+                  }
+  
+                  setTimeout(() => setNotification(""), 1500);
+  
                   // Remove marker from map
-                  pointMarkers.current[index].setMap(null);
+                  if (pointMarkers.current[index]) {
+                      pointMarkers.current[index].setMap(null);
+                      pointMarkers.current.splice(index, 1);
+                  }
                   return false;
               }
               return true;
           })
       );
   };
-    return (
-        <div className="w-screen h-screen fixed top-0 left-0">
-            {!gameStarted ? (
-                <div className="absolute w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white">
-                    <h1 className="text-3xl mb-5">Select Your Character</h1>
+  
+ return (
+    <div className="w-screen h-screen fixed top-0 left-0 bg-gradient-to-br from-blue-900 to-black text-white">
+        {!gameStarted ? (
+            <div className="absolute w-full h-full flex flex-col items-center justify-center text-white">
+                <h1 className="text-5xl font-bold mb-5">🌍 Welcome to the Exploration Game!</h1>
 
-                    <div className="flex space-x-5">
-                        {Object.keys(players).map((key) => (
-                            <button
-                                key={key}
-                                className={`p-3 rounded transition ${
-                                    selectedPlayer === players[key].model
-                                        ? "bg-yellow-500"
-                                        : "bg-gray-700 hover:bg-gray-600"
-                                }`}
-                                onClick={() => setSelectedPlayer(players[key].model)}
-                            >
-                                {players[key].name}
-                            </button>
-                        ))}
-                    </div>
+                <p className="text-lg mb-4 text-gray-300">Travel to real-world cities and collect stars!</p>
 
-                    <input
-                        type="text"
-                        placeholder="Enter a city or country"
-                        className="p-2 mt-5 text-white rounded"
-                        value={startLocation}
-                        onChange={(e) => setStartLocation(e.target.value)}
-                    />
-
-                    {weather && (
-                        <p className="mt-3 text-lg bg-gray-700 p-2 rounded">
-                            🌤 Weather: {weather}
-                        </p>
-                    )}
-
-                    <button
-                        className={`p-3 mt-5 rounded ${
-                            selectedPlayer && startLocation
-                                ? "bg-red-500 hover:bg-red-600"
-                                : "bg-gray-500 cursor-not-allowed"
-                        }`}
-                        onClick={() => selectedPlayer && startLocation && setGameStarted(true)}
-                        disabled={!selectedPlayer || startLocation === ""}
-                    >
-                        Start Game
-                    </button>
+                <div className="flex space-x-5">
+                    {Object.keys(players).map((key) => (
+                        <button
+                            key={key}
+                            className={`p-3 rounded transition shadow-lg ${
+                                selectedPlayer === players[key].model
+                                    ? "bg-yellow-500"
+                                    : "bg-gray-700 hover:bg-gray-600"
+                            }`}
+                            onClick={() => setSelectedPlayer(players[key].model)}
+                        >
+                            {players[key].name}
+                        </button>
+                    ))}
                 </div>
-            ) : (
-                <>
-                    <div className="absolute top-5 left-1/2 transform -translate-x-1/2 p-3 bg-blue-600 text-white rounded shadow-md text-xl font-bold z-10 animate-bounce">
-                        Score: {score}
-                    </div>
 
-                    {notification && (
-                        <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 p-3 bg-green-500 text-white rounded shadow-md text-lg font-bold z-10">
-                            {notification}
-                        </div>
-                    )}
+                <input
+                    type="text"
+                    placeholder="Enter a city or country"
+                    className="p-2 mt-5 text-white rounded"
+                    value={startLocation}
+                    onChange={(e) => setStartLocation(e.target.value)}
+                />
 
-                    {/* ✅ This ensures the map is available before initialization */}
-                    <div ref={mapContainerRef} id="map" className="absolute w-full h-full top-0 left-0"></div>
+                {weather && (
+                    <p className="mt-3 text-lg bg-gray-700 p-2 rounded">🌤 Weather: {weather}</p>
+                )}
 
-                    <Canvas shadows className="w-full h-full">
-                        <Suspense fallback={null}>
-                            <Physics timeStep="vary">
-                                <KeyboardControls map={keyboardMap} onChange={movePlayer}>
-                                    <Controller maxVelLimit={5}>
-                                        <Gltf
-                                            position={[0, jumpRef.current ? 1 : 0, 0]}
-                                            castShadow
-                                            receiveShadow
-                                            scale={0.315}
-                                            src={selectedPlayer}
-                                        />
-                                    </Controller>
-                                </KeyboardControls>
-                            </Physics>
-                        </Suspense>
-                    </Canvas>
+                <button
+                    className={`p-3 mt-5 rounded shadow-md ${
+                        selectedPlayer && startLocation
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-gray-500 cursor-not-allowed"
+                    }`}
+                    onClick={() => selectedPlayer && startLocation && setGameStarted(true)}
+                    disabled={!selectedPlayer || startLocation === ""}
+                >
+                    Start Game
+                </button>
+            </div>
+        ) : (
+            <>
+                {/* ✅ Score & Quest Progress UI */}
+                <div className="absolute top-5 left-1/2 transform -translate-x-1/2 p-3 bg-blue-600 text-white rounded shadow-md text-xl font-bold z-10">
+                    Score: {score} ⭐
+               
+  
 
-                    <button
-                        className="absolute bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-yellow-500 text-black rounded shadow-md"
-                        onClick={handleJump}
-                    >
-                        Jump
-                    </button>
-                </>
-            )}
-        </div>
-    );
+                {notification && (
+                    <p className="absolute top-1/4 left-1/2 transform -translate-x-1/2 p-3 bg-yellow-500 text-black rounded shadow-md text-lg font-bold z-10">
+                        {notification}
+                    </p>
+                )}
+
+                {/* ✅ Welcome Banner for City */}
+                {currentCity && (
+                    <p className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white text-3xl font-bold p-5 rounded-b-md shadow-lg">
+                        📍 {currentCity}
+                    </p>
+                )}
+ </div>
+                {/* ✅ Google Map */}
+                <div ref={mapContainerRef} id="map" className="absolute w-full h-full top-0 left-0"></div>
+
+                {/* ✅ Game Canvas */}
+                <Canvas shadows className="w-full h-full">
+                    <Suspense fallback={null}>
+                    <ambientLight intensity={0.5} />
+              <directionalLight intensity={0.7} castShadow position={[-10, 20, 10]} />
+              <pointLight position={[10, 10, 10]} intensity={1} />
+
+                        <Physics timeStep="vary">
+                            <KeyboardControls map={keyboardMap} onChange={movePlayer}>
+                                <Controller maxVelLimit={5}>
+                                <RigidBody type="fixed" colliders="trimesh">
+                                    <Gltf
+                                        position={[0, jumpRef.current ? 1 : 0, 0]}
+                                        castShadow
+                                        receiveShadow
+                                        scale={0.315}
+                                        src={selectedPlayer}
+                                    />
+                                    </RigidBody>
+                                </Controller>
+                            </KeyboardControls>
+                        </Physics>
+                    </Suspense>
+                </Canvas>
+
+             {/* 🔹 Control Keys Overlay Image - Always Visible */}
+      <img
+        src="/controls.png"
+        alt="Control Keys"
+        className="absolute bottom-4 left-4 w-40 opacity-80 pointer-events-none"
+      />
+            </>
+        )}
+    </div>
+);
 };
 
 export default Game;

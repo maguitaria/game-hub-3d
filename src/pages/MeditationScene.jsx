@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import SceneElements from '../components/SceneElements';
 import Controls from '../components/Controls';
 import Navbar from '../components/Navbar';
 import '../styles/App.css';
