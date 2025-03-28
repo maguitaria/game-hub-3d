@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import Controls from '../components/Controls';
-import Navbar from '../components/Navbar';
 import '../styles/App.css';
-import Waves from '../../Waves/Waves';
+import Rain from '../components/Rain';
+import { Canvas } from '@react-three/fiber';
 
 const MeditationScene = () => {
-    const mountRef = useRef(null);
     const [audio, setAudio] = useState(null);
     const [volume, setVolume] = useState(0.5);
 
@@ -80,8 +79,11 @@ const MeditationScene = () => {
                 
             </div>
                             
-      
- 
+            <Canvas camera={{ position: [0, 20, 50], fov: 75 }}>
+  <ambientLight intensity={0.5} />
+  <directionalLight position={[0, 10, 5]} intensity={1} />
+  <Rain />
+</Canvas>
         </div>
         
     );
