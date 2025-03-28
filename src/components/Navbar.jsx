@@ -1,7 +1,7 @@
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-
+import logo from '../assets/FH_Joanneum_Logo.png';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -24,7 +24,7 @@ export default function Navbar() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center">
-                <img className="h-10 w-auto" src='./src/assets/FH_Joanneum_Logo.png' alt="Logo" />
+                <img className="h-10 w-auto" src={logo} alt="Logo" />
                 <h1 className="text-white text-2xl font-bold ml-3">🎮 Game Hub</h1>
               </div>
 
