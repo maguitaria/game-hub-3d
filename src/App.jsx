@@ -14,12 +14,13 @@ const App = () => {
             <Navbar />
             <Routes>
             
-            <Route path="/meditation-scene" element={<MeditationScene />} />
+      
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/meditation-scene" element={<MeditationScene />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/combini-page" element={< Game/>} />
-                <Route path="/model-scene" element={< ModelScene/>} />
+                <Route path="/explore-game" element={< Game/>} />
+                <Route path="/ghost-adventure" element={< ModelScene/>} />
             </Routes>
        </>
     );

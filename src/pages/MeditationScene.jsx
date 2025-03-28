@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import Controls from '../components/Controls';
 import Navbar from '../components/Navbar';
 import '../styles/App.css';
+import Waves from '../../Waves/Waves';
 
 const MeditationScene = () => {
     const mountRef = useRef(null);
@@ -18,10 +19,9 @@ const MeditationScene = () => {
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        mountRef.current.appendChild(renderer.domElement);
+       
 
-        // Add Scene Elements (Trees, Sun, Ground)
-        // SceneElements(scene);
+      
 
         // Controls
         const controls = Controls(camera, renderer);
@@ -41,11 +41,7 @@ const MeditationScene = () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        return () => {
-            if (mountRef.current) {
-                mountRef.current.removeChild(renderer.domElement);
-            }
-        };
+       
     }, []);
 
     const playMusic = (track) => {
@@ -81,9 +77,13 @@ const MeditationScene = () => {
                     <label className="block text-lg font-medium">Adjust Volume</label>
                     <input type="range" min="0" max="1" step="0.01" value={volume} onChange={adjustVolume} className="w-full mt-2" />
                 </div>
+                
             </div>
-            <div ref={mountRef} className="w-full h-[70vh] mt-6 rounded-lg shadow-lg"></div>
+                            
+      
+ 
         </div>
+        
     );
 };
 
