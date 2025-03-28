@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 const Contact = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-slate-800 text-white">
-      <Navbar />
+  
 
       <div className="max-w-3xl mx-auto px-6 py-20">
         <h1 className="text-4xl md:text-5xl font-bold text-cyan-400 text-center mb-8">
