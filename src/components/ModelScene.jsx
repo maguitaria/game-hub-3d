@@ -20,18 +20,24 @@ const ModelScene = () => {
   );
 
   return (
-    <div className="w-screen h-screen fixed top-0 left-0">
+    <div className="w-screen h-screen  top-0 left-0 bg-gradient-to-br from-blue-900 to-black text-white">
+   
       {/* Welcome Screen - Show only if the game hasn't started */}
-      {!gameStarted && (
-        <div className="absolute w-full h-full flex flex-col items-center justify-center bg-black bg-opacity-80 text-white">
-          <h1 className="text-4xl font-bold mb-4">Welcome to the Game</h1>
-          <button
-            className="px-6 py-3 bg-green-500 hover:bg-green-700 text-white font-bold text-xl rounded-md shadow-md"
-            onClick={() => setGameStarted(true)}
-          >
-            Play
-          </button>
-        </div>
+   {!gameStarted && (
+     <div className="absolute w-full h-full flex flex-col items-center justify-center text-white">
+<h1 className="text-5xl font-bold mb-5">👻 Welcome to the Ghost Game!</h1>
+
+<p className="text-lg mb-4 text-gray-300">Explore the unusal setting with Ghost</p>
+      <div className="relative z-10 text-center">
+     
+        <button
+          className="px-8 py-4 bg-green-500 hover:bg-green-600 text-white text-xl font-semibold rounded-lg shadow-lg transition-all duration-300"
+          onClick={() => setGameStarted(true)}
+        >
+          Play
+        </button>
+      </div>
+    </div>
       )}
 
       {/* 3D Game Scene - Only Rendered After Clicking Play */}

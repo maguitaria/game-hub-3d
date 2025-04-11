@@ -211,7 +211,7 @@ const checkCityQuest = async () => {
   };
   
  return (
-    <div className="w-screen h-screen fixed top-0 left-0 bg-gradient-to-br from-blue-900 to-black text-white">
+    <div className="w-screen h-screen  top-0 left-0 bg-gradient-to-br from-blue-900 to-black text-white">
         {!gameStarted ? (
             <div className="absolute w-full h-full flex flex-col items-center justify-center text-white">
                 <h1 className="text-5xl font-bold mb-5">🌍 Welcome to the Exploration Game!</h1>
