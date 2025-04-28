@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# For gitlab. LFS on FH Joanneum Gitlab take up way too much space -> sync with Gitlab is not possible.
+# Full version of the project is on Github
+nature-3d-scene/public
+
